@@ -11,6 +11,7 @@ import SpriteKit
 
 class GameScene: SKScene, SKPhysicsContactDelegate {
     var scoreLabel: SKLabelNode!
+    var ballsLimitLabel: SKLabelNode!
     var ball1 = SKSpriteNode(imageNamed: "ballBlue")
     var ball2 = SKSpriteNode(imageNamed: "ballCyan")
     var ball3 = SKSpriteNode(imageNamed: "ballGreen")
@@ -25,6 +26,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var score = 0 {
         didSet{
             scoreLabel.text = "Score: \(score)"
+        }
+    }
+    
+    var ballsLimit = 5 {
+        didSet{
+            ballsLimitLabel.text = "BallsLimit: \(ballsLimit)"
         }
     }
     
@@ -53,6 +60,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         scoreLabel.horizontalAlignmentMode = .right
         scoreLabel.position = CGPoint(x: 980, y: 700)
         addChild(scoreLabel)
+        
+        ballsLimitLabel = SKLabelNode(fontNamed: "ChalkDuster")
+        ballsLimitLabel.text = "BallsLimit: 5"
+        ballsLimitLabel.horizontalAlignmentMode = .right
+        ballsLimitLabel.position = CGPoint(x: 980, y: 660)
+        addChild(ballsLimitLabel)
         
         editingLabel = SKLabelNode(fontNamed: "ChalkDuster")
         editingLabel.text = "Edit"
@@ -91,6 +104,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 
                 box.physicsBody = SKPhysicsBody(rectangleOf: box.size)
                 box.physicsBody?.isDynamic = false
+                box.name = "box"
                 addChild(box)
                 
             } else {
@@ -147,11 +161,24 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         if object.name == "good" {
             destroy(ball: ball)
             score += 1
+            ballsLimit += 1
         } else if object.name == "bad" {
             destroy(ball: ball)
             score -= 1
+            ballsLimit -= 1
+            gameOver()
+        } else if object.name == "box" {
+            destroy(box: object)
         }
     }
+    
+    func destroy(box: SKNode) {
+        if let fireParticles = SKEmitterNode(fileNamed: "FireParticles") {
+        fireParticles.position = box.position
+        addChild(fireParticles)
+        }
+        box.removeFromParent()
+        }
     
     func destroy(ball: SKNode) {
 //        it is loading the sks file from below the info.plist file
@@ -173,5 +200,23 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         else if nodeB.name == "ball" {
             collision(between: nodeB, object: nodeA)
         }
+       
+    }
+    
+    func gameOver() {
+        if ballsLimit < 1 {
+            print("you lose")
+            let ac = UIAlertController(title: "You Lose!", message: "Want to try again", preferredStyle: .alert)
+            ac.addAction(UIAlertAction(title: "New game", style: .default) {_ in
+                self.newGame()})
+           DispatchQueue.main.async {
+                self.view?.window?.rootViewController?.present(ac, animated: true, completion: nil)
+            }
+        }
+    }
+    func newGame() {
+        score = 0
+        ballsLimit = 5
+        editingMode = true
     }
 }
